@@ -4,10 +4,7 @@ declare(strict_types=1);
 namespace MessagePack\Tests;
 
 use MessagePack\Tests\Data\Type;
-use MessagePack\{
-    Encoder,
-    Exception\EncodingFailed
-};
+use MessagePack\{Encoder, Exception\EncodingFailed};
 use PHPUnit\Framework\TestCase;
 
 final class EncoderTest extends TestCase
@@ -32,6 +29,7 @@ final class EncoderTest extends TestCase
         yield from Type::string();
         yield from Type::array();
         yield from Type::map();
+        yield from Type::ext();
     }
 
     /**

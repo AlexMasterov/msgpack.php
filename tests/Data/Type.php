@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace MessagePack\Tests\Data;
 
+use MessagePack\Ext;
 use MessagePack\Tests\Data\Binary as b;
 use PHPUnit\Framework\TestCase;
 
@@ -117,11 +118,32 @@ final class Type
         // 32 df
         yield [b::map(65536), map(65536)];
     }
+
+    public static function ext(): Iterable
+    {
+        // fixext 1
+        yield [b::ext(5, 1), ext(5, 1)];
+        // fixext 2
+        yield [b::ext(5, 2), ext(5, 2)];
+        // fixext 4
+        yield [b::ext(5, 4), ext(5, 4)];
+        // fixext 8
+        yield [b::ext(5, 8), ext(5, 8)];
+        // fixext 16
+        yield [b::ext(5, 16), ext(5, 16)];
+        // 8
+        yield [b::ext(5, 255), ext(5, 255)];
+        // 16
+        yield [b::ext(5, 256), ext(5, 256)];
+        yield [b::ext(5, 65535), ext(5, 65535)];
+        // 32
+        yield [b::ext(5, 65536), ext(5, 65536)];
+    }
 }
 
-function str(int $len): string
+function str(int $length): string
 {
-    return \str_repeat('a', $len);
+    return \str_repeat('a', $length);
 }
 
 function arr(int $size): array
@@ -136,4 +158,8 @@ function map(int $size): array
         $map[$i] = $i;
     }
     return $map;
+}
+function ext(int $type, int $length): Ext
+{
+    return Ext::make($type, str($length));
 }

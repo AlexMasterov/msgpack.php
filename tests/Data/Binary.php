@@ -11,23 +11,23 @@ final class Binary
 
     public static function str(int $len): string
     {
-        $byte = self::byteStr($len);
-        $str = \str_repeat(self::CHAR, $len);
+        $byte = self::strByteHeader($len);
+        $data = \str_repeat(self::CHAR, $len);
 
-        return \bin2hex("${byte}${str}");
+        return \bin2hex("${byte}${data}");
     }
 
     public static function arr(int $len): string
     {
-        $byte = self::byteArr($len);
-        $str = \str_repeat(self::NUM, $len);
+        $byte = self::arrByteHeader($len);
+        $data = \str_repeat(self::NUM, $len);
 
-        return \bin2hex("${byte}${str}");
+        return \bin2hex("${byte}${data}");
     }
 
     public static function map(int $size): string
     {
-        $data = self::byteMap($size);
+        $data = self::mapByteHeader($size);
 
         for ($i = 1; $i <= $size; ++$i) {
             $x = self::byteInt($i);
@@ -35,6 +35,15 @@ final class Binary
         }
 
         return \bin2hex($data);
+    }
+
+    public static function ext(int $type, int $len): string
+    {
+        $byte = self::extByteHeader($len);
+        $type = self::CHR[$type];
+        $data = \str_repeat(self::CHAR, $len);
+
+        return \bin2hex("${byte}${type}${data}");
     }
 
     private static function byteInt(int $num): string
@@ -62,7 +71,7 @@ final class Binary
         return "\xce${b1}${b2}${b3}${b4}";
     }
 
-    private static function byteStr(int $len): string
+    private static function strByteHeader(int $len): string
     {
         // fixstr
         if ($len < 0x20) {
@@ -87,7 +96,7 @@ final class Binary
         return "\xdb${b1}${b2}${b3}${b4}";
     }
 
-    private static function byteArr(int $size): string
+    private static function arrByteHeader(int $size): string
     {
         // fixarray
         if ($size <= 0xf) {
@@ -107,7 +116,7 @@ final class Binary
         return "\xdd${b1}${b2}${b3}${b4}";
     }
 
-    private static function byteMap(int $size): string
+    private static function mapByteHeader(int $size): string
     {
         // fixmap
         if ($size <= 0xf) {
@@ -125,5 +134,34 @@ final class Binary
         $b3 = self::CHR[$size >> 8];
         $b4 = self::CHR[$size & 0xff];
         return "\xdf${b1}${b2}${b3}${b4}";
+    }
+
+    private static function extByteHeader(int $len): string
+    {
+        // fixext 1/2/4/8/16
+        switch ($len) {
+            case 1: return "\xd4";
+            case 2: return "\xd5";
+            case 4: return "\xd6";
+            case 8: return "\xd7";
+            case 16: return "\xd8";
+        }
+        // ext 8
+        if ($len <= 0xff) {
+            $b1 = self::CHR[$len];
+            return "\xc7${b1}";
+        }
+        // ext 16
+        if ($len <= 0xffff) {
+            $b2 = self::CHR[$len & 0xff];
+            $b1 = self::CHR[$len >> 8];
+            return "\xc8${b1}${b2}";
+        }
+        // ext 32
+        $b1 = self::CHR[$len >> 24 & 0xff];
+        $b2 = self::CHR[$len >> 16 & 0xff];
+        $b3 = self::CHR[$len >> 8 & 0xff];
+        $b4 = self::CHR[$len & 0xff];
+        return "\xc9${b1}${b2}${b3}${b4}";
     }
 }

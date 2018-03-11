@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace MessagePack;
 
-use MessagePack\Exception\EncodingFailed;
+use MessagePack\{Exception\EncodingFailed, Ext};
 use const MessagePack\CHR;
 use function array_values;
 use function count;
@@ -57,6 +57,9 @@ final class Encoder
         }
         if (null === $value) {
             return $this->encodeNil();
+        }
+        if ($value instanceof Ext) {
+            return $this->encodeExt($value);
         }
 
         throw EncodingFailed::unsupportedType($value);
@@ -185,6 +188,40 @@ final class Encoder
         }
 
         return $data;
+    }
+
+    public function encodeExt(Ext $ext): string
+    {
+        $type = CHR[$ext->type()];
+        $data = $ext->data();
+
+        $len = strlen($data);
+
+        // fixext 1/2/4/8/16
+        switch ($len) {
+            case 1: return "\xd4${type}${data}";
+            case 2: return "\xd5${type}${data}";
+            case 4: return "\xd6${type}${data}";
+            case 8: return "\xd7${type}${data}";
+            case 16: return "\xd8${type}${data}";
+        }
+        // ext 8
+        if ($len <= 0xff) {
+            $b1 = CHR[$len];
+            return "\xc7${b1}${type}${data}";
+        }
+        // ext 16
+        if ($len <= 0xffff) {
+            $b2 = CHR[$len & 0xff];
+            $b1 = CHR[$len >> 8];
+            return "\xc8${b1}${b2}${type}${data}";
+        }
+        // ext 32
+        $b1 = CHR[$len >> 24 & 0xff];
+        $b2 = CHR[$len >> 16 & 0xff];
+        $b3 = CHR[$len >> 8 & 0xff];
+        $b4 = CHR[$len & 0xff];
+        return "\xc9${b1}${b2}${b3}${b4}${type}${data}";
     }
 
     private static function encodeArrayHeader(int $size): string

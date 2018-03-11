@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace MessagePack;
 
-use MessagePack\Exception\DecodingFailed;
+use MessagePack\{Exception\DecodingFailed, Ext};
 use const MessagePack\ORD;
 use function MessagePack\{toDouble, toFloat};
 use function sprintf;
@@ -92,6 +92,18 @@ final class Decoder
             // map 16/32
             case 0xde: return $this->decodeMap($this->decodeUint16());
             case 0xdf: return $this->decodeMap($this->decodeUint32());
+
+            // fixext 1/2/4/8/16
+            case 0xd4: return $this->decodeExt(1);
+            case 0xd5: return $this->decodeExt(2);
+            case 0xd6: return $this->decodeExt(4);
+            case 0xd7: return $this->decodeExt(8);
+            case 0xd8: return $this->decodeExt(16);
+
+            // ext 8/16/32
+            case 0xc7: return $this->decodeExt($this->decodeUint8());
+            case 0xc8: return $this->decodeExt($this->decodeUint16());
+            case 0xc9: return $this->decodeExt($this->decodeUint32());
           }
 
         throw DecodingFailed::unknownByteHeader($byte, $this->offset);
@@ -285,5 +297,19 @@ final class Decoder
         }
 
         return $map;
+    }
+
+    private function decodeExt(int $length): Ext
+    {
+        if (!isset($this->data[$this->offset + $length - 1])) {
+            throw DecodingFailed::insufficientData($this->data, $this->offset, $length);
+        }
+
+        $type = $this->decodeInt8();
+
+        $data = substr($this->data, $this->offset++, $length);
+        $this->offset += $length;
+
+        return Ext::make($type, $data);
     }
 }
