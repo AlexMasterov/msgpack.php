@@ -6,6 +6,8 @@ namespace MessagePack;
 use MessagePack\Exception\DecodingFailed;
 use const MessagePack\ORD;
 use function MessagePack\{toDouble, toFloat};
+use function sprintf;
+use function substr;
 
 final class Decoder
 {
@@ -174,7 +176,7 @@ final class Decoder
             | ORD[$this->data[$this->offset++]] << 8
             | ORD[$this->data[$this->offset++]];
 
-        return $num < 0 ? \sprintf('%u', $num) : $num;
+        return $num < 0 ? sprintf('%u', $num) : $num;
     }
 
     private function decodeInt8(): int
@@ -259,7 +261,7 @@ final class Decoder
             throw DecodingFailed::insufficientData($this->data, $this->offset, $length);
         }
 
-        $str = \substr($this->data, $this->offset++, $length);
+        $str = substr($this->data, $this->offset++, $length);
         $this->offset += $length;
 
         return $str;

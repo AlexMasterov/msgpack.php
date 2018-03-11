@@ -5,6 +5,8 @@ namespace MessagePack\Exception;
 
 use MessagePack\MessagePackException;
 use RuntimeException;
+use function dechex;
+use function strlen;
 
 final class DecodingFailed extends RuntimeException implements MessagePackException
 {
@@ -17,7 +19,7 @@ final class DecodingFailed extends RuntimeException implements MessagePackExcept
 
     public static function unknownByteHeader(int $value, int $offset): self
     {
-        $byte = \dechex($value);
+        $byte = dechex($value);
 
         return new self(
             $value,
@@ -28,7 +30,7 @@ final class DecodingFailed extends RuntimeException implements MessagePackExcept
 
     public static function insufficientData(string $buffer, int $offset, int $expectedLength): self
     {
-        $actualLength = \strlen($buffer) - $offset;
+        $actualLength = strlen($buffer) - $offset;
 
         return new self(
             $buffer,

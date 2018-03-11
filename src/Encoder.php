@@ -5,6 +5,15 @@ namespace MessagePack;
 
 use MessagePack\Exception\EncodingFailed;
 use const MessagePack\CHR;
+use function array_values;
+use function count;
+use function is_array;
+use function is_bool;
+use function is_float;
+use function is_int;
+use function is_string;
+use function pack;
+use function strlen;
 
 final class Encoder
 {
@@ -24,26 +33,26 @@ final class Encoder
 
     public function encode($value): string
     {
-        if (\is_int($value)) {
+        if (is_int($value)) {
             return $this->encodeInt($value);
         }
-        if (\is_string($value)) {
+        if (is_string($value)) {
             return $this->encodeStr($value);
         }
-        if (\is_array($value)) {
+        if (is_array($value)) {
             if ($this->typeDetectionMode ^ self::FORCE_AUTO) {
                 return $this->typeDetectionMode & self::FORCE_MAP
                     ? $this->encodeMap($value)
                     : $this->encodeArray($value);
             }
-            return \array_values($value) === $value
+            return array_values($value) === $value
                 ? $this->encodeArray($value)
                 : $this->encodeMap($value);
         }
-        if (\is_float($value)) {
+        if (is_float($value)) {
             return $this->encodeFloat($value);
         }
-        if (\is_bool($value)) {
+        if (is_bool($value)) {
             return $this->encodeBool($value);
         }
         if (null === $value) {
@@ -65,7 +74,7 @@ final class Encoder
 
     public function encodeFloat(float $num): string
     {
-        $b1 = \pack('E', $num);
+        $b1 = pack('E', $num);
 
         return "\xcb${b1}";
     }
@@ -129,7 +138,7 @@ final class Encoder
 
     public function encodeStr(string $str): string
     {
-        $len = \strlen($str);
+        $len = strlen($str);
         // fixstr
         if ($len < 0x20) {
             $b0 = CHR[0xa0 | $len];
@@ -156,7 +165,7 @@ final class Encoder
 
     public function encodeArray(array $array): string
     {
-        $size = \count($array);
+        $size = count($array);
         $data = self::encodeArrayHeader($size);
 
         foreach ($array as $value) {
@@ -168,7 +177,7 @@ final class Encoder
 
     public function encodeMap(array $map): string
     {
-        $size = \count($map);
+        $size = count($map);
         $data = self::encodeMapHeader($size);
 
         foreach ($map as $key => $value) {

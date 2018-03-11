@@ -5,6 +5,9 @@ namespace MessagePack\Exception;
 
 use MessagePack\MessagePackException;
 use RuntimeException;
+use function get_class;
+use function gettype;
+use function is_object;
 
 final class EncodingFailed extends RuntimeException implements MessagePackException
 {
@@ -13,11 +16,11 @@ final class EncodingFailed extends RuntimeException implements MessagePackExcept
 
     public static function unsupportedType($value): self
     {
-        $type = \gettype($value);
+        $type = gettype($value);
         $spec = $value;
 
-        if (\is_object($spec)) {
-            $spec = \get_class($spec);
+        if (is_object($spec)) {
+            $spec = get_class($spec);
         }
 
         return new self($value, "Unsupported type: ${type} (${spec})");
