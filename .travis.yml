@@ -20,7 +20,7 @@ matrix:
     - php: nightly
 
 install:
-  - travis_retry composer update --no-interaction
+  - travis_retry composer update --no-interaction --prefer-source
 
 script:
   - composer test
