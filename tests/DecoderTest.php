@@ -4,7 +4,11 @@ declare(strict_types=1);
 namespace MessagePack\Tests;
 
 use MessagePack\Tests\Data\Type;
-use MessagePack\{Decoder, Exception\DecodingFailed};
+use MessagePack\{
+    Decoder,
+    Exception\InsufficientData,
+    Exception\UnknownByteHeader,
+};
 use PHPUnit\Framework\TestCase;
 
 final class DecoderTest extends TestCase
@@ -72,10 +76,16 @@ final class DecoderTest extends TestCase
     /** @test */
     public function it_throws_when_decode_unknown_byte(): void
     {
-        self::expectException(DecodingFailed::class);
-        self::expectExceptionCode(DecodingFailed::UNKNOWN_BYTE_HEADER);
+        $unknownByte = "\xc1";
 
-        $this->decode("\xc1");
+        try {
+            $this->decode($unknownByte);
+        } catch (UnknownByteHeader $e) {
+            self::assertSame($unknownByte, chr($e->getValue()));
+            return;
+        }
+
+        self::fail('UnknownByteHeader was not thrown.');
     }
 
     /**
@@ -86,17 +96,16 @@ final class DecoderTest extends TestCase
     {
         try {
             $this->decode($data);
-        } catch (DecodingFailed $e) {
-            self::assertSame(DecodingFailed::INSUFFICIENT_DATA, $e->getCode());
+        } catch (InsufficientData $e) {
             self::assertSame($data, $e->getValue());
             self::assertSame(
-                "Not enough data to decode: expected length bytes ${expectedLength}, got ${actualLength}",
+                "Not enough data to decode: expected length ${expectedLength}, got ${actualLength}",
                 $e->getMessage()
             );
             return;
         }
 
-        self::fail('DecodingFailed was not thrown.');
+        self::fail('InsufficientData was not thrown.');
     }
 
     public function insufficientData(): Iterable

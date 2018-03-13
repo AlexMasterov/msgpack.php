@@ -7,4 +7,5 @@ use Throwable;
 
 interface MessagePackException extends Throwable
 {
+    public function getValue();
 }

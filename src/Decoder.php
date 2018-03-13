@@ -3,7 +3,11 @@ declare(strict_types=1);
 
 namespace MessagePack;
 
-use MessagePack\{Exception\DecodingFailed, Ext};
+use MessagePack\{
+    Exception\InsufficientData,
+    Exception\UnknownByteHeader,
+    Ext
+};
 use const MessagePack\ORD;
 use function MessagePack\{toDouble, toFloat};
 use function sprintf;
@@ -28,7 +32,7 @@ final class Decoder
     private function parse()
     {
         if (!isset($this->data[$this->offset])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 1);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 1);
         }
 
         $byte = ORD[$this->data[$this->offset++]];
@@ -106,13 +110,13 @@ final class Decoder
             case 0xc9: return $this->decodeExt($this->decodeUint32());
           }
 
-        throw DecodingFailed::unknownByteHeader($byte, $this->offset);
+        throw UnknownByteHeader::fromOffset($byte, $this->offset);
     }
 
     private function decodeFloat32(): float
     {
         if (!isset($this->data[$this->offset + 3])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 4);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 4);
         }
 
         $num = ORD[$this->data[$this->offset++]] * 0x1000000
@@ -126,7 +130,7 @@ final class Decoder
     private function decodeFloat64(): float
     {
         if (!isset($this->data[$this->offset + 7])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 8);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 8);
         }
 
         $x = ORD[$this->data[$this->offset++]] * 0x1000000
@@ -145,7 +149,7 @@ final class Decoder
     private function decodeUint8(): int
     {
         if (!isset($this->data[$this->offset])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 1);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 1);
         }
 
         return ORD($this->data[$this->offset++]);
@@ -154,7 +158,7 @@ final class Decoder
     private function decodeUint16(): int
     {
         if (!isset($this->data[$this->offset + 1])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 2);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 2);
         }
 
         return ORD[$this->data[$this->offset++]] << 8
@@ -164,7 +168,7 @@ final class Decoder
     private function decodeUint32(): int
     {
         if (!isset($this->data[$this->offset + 3])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 4);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 4);
         }
 
         return ORD[$this->data[$this->offset++]] * 0x1000000
@@ -176,7 +180,7 @@ final class Decoder
     private function decodeUint64()
     {
         if (!isset($this->data[$this->offset + 7])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 8);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 8);
         }
 
         $num = (ORD[$this->data[$this->offset++]] * 0x1000000
@@ -194,7 +198,7 @@ final class Decoder
     private function decodeInt8(): int
     {
         if (!isset($this->data[$this->offset])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 1);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 1);
         }
 
         $num = ORD[$this->data[$this->offset++]];
@@ -205,7 +209,7 @@ final class Decoder
     private function decodeInt16(): int
     {
         if (!isset($this->data[$this->offset + 1])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 2);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 2);
         }
 
         $num = ORD[$this->data[$this->offset++]] << 8
@@ -217,7 +221,7 @@ final class Decoder
     private function decodeInt32(): int
     {
         if (!isset($this->data[$this->offset + 3])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 4);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 4);
         }
 
         $num = ORD[$this->data[$this->offset++]] * 0x1000000
@@ -231,7 +235,7 @@ final class Decoder
     private function decodeInt64(): int
     {
         if (!isset($this->data[$this->offset + 7])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, 8);
+            throw InsufficientData::fromOffset($this->data, $this->offset, 8);
         }
 
         $num = ORD[$this->data[$this->offset++]];
@@ -270,7 +274,7 @@ final class Decoder
         }
 
         if (!isset($this->data[$this->offset + $length - 1])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, $length);
+            throw InsufficientData::fromOffset($this->data, $this->offset, $length);
         }
 
         $str = substr($this->data, $this->offset++, $length);
@@ -302,7 +306,7 @@ final class Decoder
     private function decodeExt(int $length): Ext
     {
         if (!isset($this->data[$this->offset + $length - 1])) {
-            throw DecodingFailed::insufficientData($this->data, $this->offset, $length);
+            throw InsufficientData::fromOffset($this->data, $this->offset, $length);
         }
 
         $type = $this->decodeInt8();

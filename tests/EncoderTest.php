@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace MessagePack\Tests;
 
 use MessagePack\Tests\Data\Type;
-use MessagePack\{Encoder, Exception\EncodingFailed};
+use MessagePack\{
+    Encoder,
+    Exception\UnsupportedType
+};
 use PHPUnit\Framework\TestCase;
 
 final class EncoderTest extends TestCase
@@ -40,12 +43,12 @@ final class EncoderTest extends TestCase
     {
         try {
             $this->encode($type);
-        } catch (EncodingFailed $e) {
+        } catch (UnsupportedType $e) {
             self::assertSame($type, $e->getValue());
             return;
         }
 
-        self::fail('EncodingFailed was not thrown.');
+        self::fail('UnsupportedType was not thrown.');
     }
 
     public function unsupportedTypes(): Iterable

@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 namespace MessagePack;
 
-use MessagePack\{Exception\EncodingFailed, Ext};
+use MessagePack\{
+    Exception\UnsupportedType,
+    Ext
+};
 use const MessagePack\CHR;
 use function array_values;
 use function count;
@@ -62,7 +65,7 @@ final class Encoder
             return $this->encodeExt($value);
         }
 
-        throw EncodingFailed::unsupportedType($value);
+        throw UnsupportedType::withValue($value);
     }
 
     public function encodeNil(): string
