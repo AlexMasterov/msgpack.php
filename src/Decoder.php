@@ -296,9 +296,9 @@ final class Decoder
             throw InsufficientData::fromOffset($this->data, $this->offset, $length);
         }
 
-        $type = $this->decodeInt8();
-
+        $type = ORD[$this->data[$this->offset++]];
         $data = substr($this->data, $this->offset++, $length);
+
         $this->offset += $length;
 
         return Ext::make($type, $data);
