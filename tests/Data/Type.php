@@ -58,6 +58,12 @@ final class Type
         yield ['d280000000', -2147483648];
         // 64
         yield ['d3ffffffff7fffffff', -2147483649];
+        yield ['d3fffffffeffffffff', -4294967297];
+        yield ['d3ffffc47c1c1de2b1', -65437650001231];
+        yield ['d3fffc0d7348ea8e39', -1111111111111111];
+        yield ['d3fffa8e0992bfa747', -1532678092380345];
+        yield ['d3fff0000000000000', -4503599627370496];
+        yield ['d3ffe42540896a3a21', -7840340234323423];
         yield ['d38000000000000000', PHP_INT_MIN /* -9223372036854775808 */];
     }
 

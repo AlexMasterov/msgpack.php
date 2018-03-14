@@ -224,10 +224,12 @@ final class Decoder
             throw InsufficientData::fromOffset($this->data, $this->offset, 4);
         }
 
-        return ORD[$this->data[$this->offset++]] << 24
+        $num = ORD[$this->data[$this->offset++]] << 24
             | ORD[$this->data[$this->offset++]] << 16
             | ORD[$this->data[$this->offset++]] << 8
             | ORD[$this->data[$this->offset++]];
+
+        return $num & 0x80000000 ? $num - 0x100000000 : $num;
     }
 
     private function decodeInt64(): int
@@ -236,33 +238,20 @@ final class Decoder
             throw InsufficientData::fromOffset($this->data, $this->offset, 8);
         }
 
-        $num = ORD[$this->data[$this->offset++]];
-
-        $negate = ($num & 0x80) === 0x80;
-
-        if ($negate) {
-            $num = (($num ^ 0xff) * 0x100000000000000)
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x1000000000000
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x10000000000
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x100000000
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x1000000
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x10000
-                | (ORD[$this->data[$this->offset++]] ^ 0xff) * 0x100
-                | ORD[$this->data[$this->offset++]] ^ 0xff;
-
-            return ~$num;
-        }
-
-        $num = ($num * 0x100000000000000)
-            | ORD[$this->data[$this->offset++]] * 0x1000000000000
-            | ORD[$this->data[$this->offset++]] * 0x10000000000
-            | ORD[$this->data[$this->offset++]] * 0x100000000
-            | ORD[$this->data[$this->offset++]] * 0x1000000
-            | ORD[$this->data[$this->offset++]] * 0x10000
-            | ORD[$this->data[$this->offset++]] * 0x100
+        $num = ORD[$this->data[$this->offset++]] << 24
+            | ORD[$this->data[$this->offset++]] << 16
+            | ORD[$this->data[$this->offset++]] << 8
             | ORD[$this->data[$this->offset++]];
 
-        return $num;
+        if ($num & 0x80000000) {
+            $num -= 0x100000000;
+        }
+
+        return $num * 0x100000000
+            | ORD[$this->data[$this->offset++]] * 0x1000000
+            | ORD[$this->data[$this->offset++]] << 16
+            | ORD[$this->data[$this->offset++]] << 8
+            | ORD[$this->data[$this->offset++]];
     }
 
     private function decodeStr(int $length): string
