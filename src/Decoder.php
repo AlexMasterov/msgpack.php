@@ -224,12 +224,10 @@ final class Decoder
             throw InsufficientData::fromOffset($this->data, $this->offset, 4);
         }
 
-        $num = ORD[$this->data[$this->offset++]] * 0x1000000
+        return ORD[$this->data[$this->offset++]] << 24
             | ORD[$this->data[$this->offset++]] << 16
             | ORD[$this->data[$this->offset++]] << 8
             | ORD[$this->data[$this->offset++]];
-
-        return $num & 0x80000000 ? $num - 0x100000000 : $num;
     }
 
     private function decodeInt64(): int

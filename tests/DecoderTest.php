@@ -61,6 +61,13 @@ final class DecoderTest extends TestCase
         yield from Type::uint();
         yield from Type::uint64();
         yield from Type::int();
+        // int 32
+        yield ['d200000000', 0];
+        yield ['d200000001', 1];
+        yield ['d2ffffffff', -1];
+        yield ['d200008000', 32768];
+        yield ['d27fffffff', 2147483647];
+        // int 64
         yield ['d37fffffffffffffff', PHP_INT_MAX, /* 9223372036854775807 */];
     }
 
