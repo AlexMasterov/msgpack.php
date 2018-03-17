@@ -195,7 +195,7 @@ final class Encoder
 
     public function encodeExt(Ext $ext): string
     {
-        $type = CHR[$ext->type()];
+        $type = CHR[$ext->type() & 0x7f];
         $data = $ext->data();
 
         $len = strlen($data);
@@ -215,8 +215,8 @@ final class Encoder
         }
         // ext 16
         if ($len <= 0xffff) {
-            $b2 = CHR[$len & 0xff];
             $b1 = CHR[$len >> 8];
+            $b2 = CHR[$len & 0xff];
             return "\xc8${b1}${b2}${type}${data}";
         }
         // ext 32
