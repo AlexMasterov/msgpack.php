@@ -25,6 +25,6 @@ final class UnsupportedType extends RuntimeException implements MessagePackExcep
             $spec = get_class($spec);
         }
 
-        return new self($value, "Unsupported type: ${type} (${spec})");
+        return new self($value, "Could not encode: ${type} (${spec})");
     }
 }
