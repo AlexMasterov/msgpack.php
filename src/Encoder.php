@@ -56,10 +56,10 @@ final class Encoder
             return $this->encodeFloat($value);
         }
         if (is_bool($value)) {
-            return $this->encodeBool($value);
+            return $value ? "\xc3" : "\xc2";
         }
         if (null === $value) {
-            return $this->encodeNil();
+            return "\xc0";
         }
         if ($value instanceof Ext) {
             return $this->encodeExt($value);
@@ -112,7 +112,18 @@ final class Encoder
                 return "\xce${b1}${b2}${b3}${b4}";
             }
             // uint 64
-            return self::encodeUint64("\xcf", $num);
+            $hi = ($num & 0xffffffff00000000) >> 32;
+            $lo = $num & 0x00000000ffffffff;
+
+            $b1 = CHR[$hi >> 24 & 0xff];
+            $b2 = CHR[$hi >> 16 & 0xff];
+            $b3 = CHR[$hi >> 8 & 0xff];
+            $b4 = CHR[$hi & 0xff];
+            $b5 = CHR[$lo >> 24 & 0xff];
+            $b6 = CHR[$lo >> 16 & 0xff];
+            $b7 = CHR[$lo >> 8 & 0xff];
+            $b8 = CHR[$lo & 0xff];
+            return "\xcf${b1}${b2}${b3}${b4}${b5}${b6}${b7}${b8}";
         }
         // negative fixint
         if ($num >= -0x20) {
@@ -139,7 +150,18 @@ final class Encoder
             return "\xd2${b1}${b2}${b3}${b4}";
         }
         // int 64
-        return self::encodeUint64("\xd3", $num);
+        $hi = ($num & 0xffffffff00000000) >> 32;
+        $lo = $num & 0x00000000ffffffff;
+
+        $b1 = CHR[$hi >> 24 & 0xff];
+        $b2 = CHR[$hi >> 16 & 0xff];
+        $b3 = CHR[$hi >> 8 & 0xff];
+        $b4 = CHR[$hi & 0xff];
+        $b5 = CHR[$lo >> 24 & 0xff];
+        $b6 = CHR[$lo >> 16 & 0xff];
+        $b7 = CHR[$lo >> 8 & 0xff];
+        $b8 = CHR[$lo & 0xff];
+        return "\xd3${b1}${b2}${b3}${b4}${b5}${b6}${b7}${b8}";
     }
 
     public function encodeStr(string $str): string
@@ -172,7 +194,20 @@ final class Encoder
     public function encodeArray(array $array): string
     {
         $size = count($array);
-        $data = self::encodeArrayHeader($size);
+
+        if ($size <= 0xf) { // fixarray
+            $data = CHR[0x90 | $size];
+        } elseif ($size <= 0xffff) { // array 16
+            $b1 = CHR[$size >> 8];
+            $b2 = CHR[$size & 0xff];
+            $data = "\xdc${b1}${b2}";
+        } else { // array 32
+            $b1 = CHR[$size >> 24];
+            $b2 = CHR[$size >> 16];
+            $b3 = CHR[$size >> 8];
+            $b4 = CHR[$size & 0xff];
+            $data = "\xdd${b1}${b2}${b3}${b4}";
+        }
 
         foreach ($array as $value) {
             $data .= $this->encode($value);
@@ -184,7 +219,20 @@ final class Encoder
     public function encodeMap(array $map): string
     {
         $size = count($map);
-        $data = self::encodeMapHeader($size);
+
+        if ($size <= 0xf) { // fixmap
+            $data = CHR[0x80 | $size];
+        } elseif ($size <= 0xffff) { // map 16
+            $b1 = CHR[$size >> 8];
+            $b2 = CHR[$size & 0xff];
+            $data = "\xde${b1}${b2}";
+        } else { // map 32
+            $b1 = CHR[$size >> 24];
+            $b2 = CHR[$size >> 16];
+            $b3 = CHR[$size >> 8];
+            $b4 = CHR[$size & 0xff];
+            $data = "\xdf${b1}${b2}${b3}${b4}";
+        }
 
         foreach ($map as $key => $value) {
             $data .= "{$this->encode($key)}{$this->encode($value)}";
@@ -225,63 +273,5 @@ final class Encoder
         $b3 = CHR[$len >> 8 & 0xff];
         $b4 = CHR[$len & 0xff];
         return "\xc9${b1}${b2}${b3}${b4}${type}${data}";
-    }
-
-    private static function encodeArrayHeader(int $size): string
-    {
-        // fixarray
-        if ($size <= 0xf) {
-            return CHR[0x90 | $size];
-        }
-        // array 16
-        if ($size <= 0xffff) {
-            $b1 = CHR[$size >> 8];
-            $b2 = CHR[$size & 0xff];
-            return "\xdc${b1}${b2}";
-        }
-        // array 32
-        $b1 = CHR[$size >> 24];
-        $b2 = CHR[$size >> 16];
-        $b3 = CHR[$size >> 8];
-        $b4 = CHR[$size & 0xff];
-        return "\xdd${b1}${b2}${b3}${b4}";
-    }
-
-    private static function encodeMapHeader(int $size): string
-    {
-        // fixmap
-        if ($size <= 0xf) {
-            return CHR[0x80 | $size];
-        }
-        // map 16
-        if ($size <= 0xffff) {
-            $b1 = CHR[$size >> 8];
-            $b2 = CHR[$size & 0xff];
-            return "\xde${b1}${b2}";
-        }
-        // map 32
-        $b1 = CHR[$size >> 24];
-        $b2 = CHR[$size >> 16];
-        $b3 = CHR[$size >> 8];
-        $b4 = CHR[$size & 0xff];
-        return "\xdf${b1}${b2}${b3}${b4}";
-    }
-
-    private static function encodeUint64(string $byte, int $value): string
-    {
-        $hi = ($value & 0xffffffff00000000) >> 32;
-        $lo = $value & 0x00000000ffffffff;
-
-        $b1 = CHR[$hi >> 24 & 0xff];
-        $b2 = CHR[$hi >> 16 & 0xff];
-        $b3 = CHR[$hi >> 8 & 0xff];
-        $b4 = CHR[$hi & 0xff];
-
-        $b5 = CHR[$lo >> 24 & 0xff];
-        $b6 = CHR[$lo >> 16 & 0xff];
-        $b7 = CHR[$lo >> 8 & 0xff];
-        $b8 = CHR[$lo & 0xff];
-
-        return "${byte}${b1}${b2}${b3}${b4}${b5}${b6}${b7}${b8}";
     }
 }
